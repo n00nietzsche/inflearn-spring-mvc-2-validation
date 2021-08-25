@@ -3,9 +3,13 @@ package hello.itemservice.web.validation;
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -16,6 +20,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/validation/v2/items")
 @RequiredArgsConstructor
+@Slf4j
 public class ValidationItemControllerV2 {
 
     private final ItemRepository itemRepository;
@@ -41,21 +46,21 @@ public class ValidationItemControllerV2 {
     }
 
     @PostMapping("/add")
-    public String addItem(@ModelAttribute Item item, RedirectAttributes redirectAttributes, Model model) {
-        // 검증 오류 결과를 보관
-        Map<String, String> errors = new HashMap<>();
+    public String addItemV1(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
 
         // 검증 로직
         if(!StringUtils.hasText(item.getItemName())) {
-            errors.put("itemName", "상품 이름은 필수입니다.");
+            bindingResult.addError(new FieldError("item", "itemName", "상품 이름은 필수입니다."));
         }
 
         if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() > 1000000) {
-            errors.put("price", "가격은 1,000 ~ 1,000,000 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item", "price", "가격은 1,000에서 1,000,000 사이여야 합니다."));
         }
 
         if(item.getQuantity() == null || item.getQuantity() > 9999) {
-            errors.put("quantity", "수량은 최대 9,999 까지 허용합니다.");
+            bindingResult.addError(
+                    new FieldError("item", "quantity", "수량은 최대 9,999 까지 허용합니다.")
+            );
         }
 
         // 특정 필드가 아닌 복합 룰 검증
@@ -63,15 +68,17 @@ public class ValidationItemControllerV2 {
             int resultPrice = item.getPrice() * item.getQuantity();
 
             if(resultPrice < 10000) {
-                errors.put("globalError", "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값은 " + resultPrice + " 입니다.");
+                bindingResult.addError(
+                        new ObjectError("item",
+                        "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값은 " + resultPrice + " 입니다.")
+                );
             }
         }
 
-        // 검증 실패 시 입력폼으로
-        // `isEmpty()`라는 부정에 `!`라는 부정이 또 붙어서
-        // 코드의 가독성이 떨어지니 시간이 있을 때 리팩토링하는 것이 좋다.
-        if(!errors.isEmpty()) {
-            model.addAttribute("errors", errors);
+        // 검증 실패 시에 다시 입력폼으로 가는 로직
+        if(bindingResult.hasErrors()) {
+            // bindingResult 는 굳이 모델에 안담아도 스프링이 알아서 해준다.
+            log.info("errors={}", bindingResult);
             return "validation/v2/addForm";
         }
 
