@@ -213,6 +213,7 @@ public class ValidationItemControllerV2 {
 
         log.info("objectName={}", bindingResult.getObjectName());
         log.info("target={}", bindingResult.getTarget());
+        log.info("allErrors={}", bindingResult.getAllErrors());
 
         // 검증 로직
         if(!StringUtils.hasText(item.getItemName())) {
