@@ -1,6 +1,8 @@
 package hello.itemservice.domain.item;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Range;
 import org.hibernate.validator.constraints.ScriptAssert;
 
@@ -9,25 +11,13 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Data
-@ScriptAssert(script = "_.price * _.quantity >= 10000", lang = "javascript", alias = "_", message = "가격 * 수량이 10000 이상이어야 합니다.")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Item {
-
-    @NotNull(groups = UpdateCheck.class)
     private Long id;
-
-    @NotBlank(groups = {SaveCheck.class, UpdateCheck.class})
     private String itemName;
-
-    @NotNull(groups = {SaveCheck.class, UpdateCheck.class})
-    @Range(min = 1000, max = 1000000, groups = {SaveCheck.class, UpdateCheck.class})
     private Integer price;
-
-    @NotNull(groups = {SaveCheck.class, UpdateCheck.class})
-    @Max(value = 9999, groups = SaveCheck.class)
     private Integer quantity;
-
-    public Item() {
-    }
 
     public Item(String itemName, Integer price, Integer quantity) {
         this.itemName = itemName;

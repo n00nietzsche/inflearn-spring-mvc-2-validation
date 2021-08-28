@@ -4,6 +4,8 @@ import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import hello.itemservice.domain.item.SaveCheck;
 import hello.itemservice.domain.item.UpdateCheck;
+import hello.itemservice.web.validation.form.ItemSaveForm;
+import hello.itemservice.web.validation.form.ItemUpdateForm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -44,7 +46,8 @@ public class ValidationItemControllerV4 {
     }
 
     @PostMapping("/add")
-    public String addItemV(@ModelAttribute @Validated(SaveCheck.class) Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    public String addItemV(@ModelAttribute("item") @Validated ItemSaveForm form, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        // @ModelAttribute("item") 과 같이 엘리먼트 이름 주지 않으면 "itemSaveForm" 과 같은 형식으로 뷰에 넘어간다.
 
         // 검증 실패 시에 다시 입력폼으로 가는 로직
         if(bindingResult.hasErrors()) {
@@ -53,7 +56,9 @@ public class ValidationItemControllerV4 {
         }
 
         // 성공 로직
-        Item savedItem = itemRepository.save(item);
+        Item newItem = new Item(form.getItemName(), form.getPrice(), form.getQuantity());
+        Item savedItem = itemRepository.save(newItem);
+
         redirectAttributes.addAttribute("itemId", savedItem.getId());
         redirectAttributes.addAttribute("status", true);
         return "redirect:/validation/v4/items/{itemId}";
@@ -67,13 +72,15 @@ public class ValidationItemControllerV4 {
     }
 
     @PostMapping("/{itemId}/edit")
-    public String edit(@PathVariable Long itemId, @Validated(UpdateCheck.class) @ModelAttribute Item item, BindingResult bindingResult) {
+    public String edit(@PathVariable Long itemId, @Validated @ModelAttribute("item") ItemUpdateForm form, BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {
             log.info("errors={}", bindingResult);
             return "validation/v4/editForm";
         }
 
-        itemRepository.update(itemId, item);
+        Item updatedItem = new Item(form.getItemName(), form.getPrice(), form.getQuantity());
+        itemRepository.update(itemId, updatedItem);
+
         return "redirect:/validation/v4/items/{itemId}";
     }
 
